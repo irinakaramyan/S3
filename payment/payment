@@ -1,0 +1,43 @@
+from flask import Flask, request, render_template, jsonify
+
+app = Flask(__name__)
+
+# Route to render the payment form
+@app.route("/")
+def index():
+    return render_template("payment.html")
+
+# Route to process payment
+@app.route("/process-payment", methods=["POST"])
+def process_payment():
+    try:
+        # Collect data from the request
+        data = request.get_json()
+        card_name = data.get("card_name")
+        card_number = data.get("card_number")
+        exp_date = data.get("exp_date")
+        cvv = data.get("cvv")
+        payment_method = data.get("payment_method")
+        total_amount = data.get("total_amount")
+
+        # Basic validation
+        if not card_name or not card_number or not exp_date or not cvv or not payment_method:
+            return jsonify({"status": "error", "message": "All fields are required!"}), 400
+        
+        if len(card_number) != 16 or not card_number.isdigit():
+            return jsonify({"status": "error", "message": "Invalid card number. It must be 16 digits."}), 400
+
+        if len(cvv) != 3 or not cvv.isdigit():
+            return jsonify({"status": "error", "message": "Invalid CVV. It must be 3 digits."}), 400
+
+        # Simulate a successful payment processing
+        return jsonify({
+            "status": "success",
+            "message": f"Payment of ${total_amount} was successfully processed using {payment_method}."
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

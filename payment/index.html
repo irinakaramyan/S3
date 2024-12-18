@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .btn {
+            display: inline-block;
+            background: #007bff;
+            color: #fff;
+            text-align: center;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Payment Form</h2>
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="card_name">Cardholder Name</label>
+                <input type="text" id="card_name" name="card_name" required>
+            </div>
+            <div class="form-group">
+                <label for="card_number">Card Number</label>
+                <input type="text" id="card_number" name="card_number" maxlength="16" required>
+            </div>
+            <div class="form-group">
+                <label for="exp_date">Expiration Date (MM/YY)</label>
+                <input type="text" id="exp_date" name="exp_date" required>
+            </div>
+            <div class="form-group">
+                <label for="cvv">CVV</label>
+                <input type="text" id="cvv" name="cvv" maxlength="3" required>
+            </div>
+            <div class="form-group">
+                <label for="payment_method">Payment Method</label>
+                <select id="payment_method" name="payment_method" required>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Debit Card">Debit Card</option>
+                    <option value="PayPal">PayPal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="total_amount">Total Amount</label>
+                <input type="number" id="total_amount" name="total_amount" required>
+            </div>
+            <button type="button" class="btn" onclick="submitPayment()">Submit Payment</button>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function submitPayment() {
+            const form = document.getElementById("paymentForm");
+            const messageDiv = document.getElementById("message");
+
+            // Collect form data
+            const data = {
+                card_name: form.card_name.value,
+                card_number: form.card_number.value,
+                exp_date: form.exp_date.value,
+                cvv: form.cvv.value,
+                payment_method: form.payment_method.value,
+                total_amount: form.total_amount.value
+            };
+
+            try {
+                // Make POST request
+                const response = await fetch("/process-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                // Display success or error message
+                messageDiv.style.display = "block";
+                if (result.status === "success") {
+                    messageDiv.className = "message success";
+                    messageDiv.textContent = result.message;
+                } else {
+                    messageDiv.className = "message error";
+                    messageDiv.textContent = result.message;
+                }
+            } catch (error) {
+                messageDiv.style.display = "block";
+                messageDiv.className = "message error";
+                messageDiv.textContent = "An error occurred. Please try again.";
+            }
+        }
+    </script>
+</body>
+</html>

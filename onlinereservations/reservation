@@ -1,0 +1,95 @@
+from flask import Flask, request, jsonify
+import psycopg2
+import re
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Database connection
+def get_db_connection():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="your_database_name",
+        user="your_username",
+        password="your_password"
+    )
+    return conn
+
+# Create reservations table if not exists
+def create_reservation_table():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reservations (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100),
+            email VARCHAR(100),
+            phone VARCHAR(15),
+            location VARCHAR(100),
+            date DATE,
+            people INTEGER
+        )
+    ''')
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+create_reservation_table()
+
+# Validation functions
+def validate_name(name):
+    if re.search(r'\d', name):
+        raise ValueError("Name cannot contain numbers.")
+
+def validate_phone(phone):
+    if re.search(r'[a-zA-Z]', phone):
+        raise ValueError("Phone number must contain only digits.")
+
+# Route to create a reservation
+@app.route('/create-reservation', methods=['POST'])
+def create_reservation():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+
+            # Extract and validate input data
+            name = data['name']
+            phone = data['phone']
+            email = data['email']
+            location = data['location']
+            date = data['date']
+            people = data['people']
+
+            validate_name(name)
+            validate_phone(phone)
+
+            # Validate date format (optional)
+            try:
+                datetime.strptime(date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+
+            # Save data to the database
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO reservations (name, email, phone, location, date, people)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (name, email, phone, location, date, people))
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return jsonify({'message': 'Reservation successfully created.'}), 201
+        except KeyError as e:
+            return jsonify({'error': f'Missing key: {str(e)}'}), 400
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        except Exception as e:
+            return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
+
+    return jsonify({'error': 'Invalid request method.'}), 405
+
+if __name__ == '__main__':
+    app.run(debug=True)
